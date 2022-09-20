@@ -1,4 +1,5 @@
 #include <stdio.h>
+using namespace std;
 typedef struct Node
 {
     int value;
