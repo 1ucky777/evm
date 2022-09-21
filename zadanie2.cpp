@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <iostream>
 using namespace std;
 int strlen(char *a)
 {
@@ -33,9 +33,8 @@ void del(char *a)
         a[i + 1] = '\0';
     }
 }
-char *LongestCommonPrefix(int m)
+char *LongestCommonPrefix(char *mas[], int m)
 {
-    char *mas[] = {"car", "carier", "case", "cout"};
     int y = 0;
     for (int i = 0; i < m; i++)
     {
@@ -59,8 +58,4 @@ char *LongestCommonPrefix(int m)
         }
     }
     return min;
-}
-int main()
-{
-    printf("%s", LongestCommonPrefix(4));
 }
