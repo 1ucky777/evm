@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <include>
 using namespace std;
 int Mysqrt(int x)
 {
@@ -11,8 +11,4 @@ int Mysqrt(int x)
             break;
     }
     return y;
-}
-int main()
-{
-    printf ("%d", Mysqrt(130));
 }
