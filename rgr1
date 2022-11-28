@@ -1,0 +1,374 @@
+#include <iostream>
+using namespace std;
+class Iterator;
+class Matrix
+{
+    class Node
+    {
+      public:
+        int i;
+        int j;
+        double data;
+        Node *pNext;
+        Node(int i, int j, double data, Node *pNext = NULL)
+        {
+            this->i = i;
+            this->j = j;
+            this->data = data;
+            this->pNext = pNext;
+        }
+    };
+    Node *head;
+    int n;
+    int m;
+    void push_back(int i, int j, double data);
+    void clear();
+
+  public:
+    Matrix();
+    Matrix(const Matrix &other);
+    ~Matrix();
+    Matrix &operator=(const Matrix &other);
+    Matrix operator+(Matrix &other);
+    Matrix operator-(Matrix &other);
+    Matrix operator*(Matrix &other);
+    double &operator()(int i, int j);
+    Matrix inversion();
+    Matrix transposition();
+    Matrix submatrix(int nbegin, int mbegin, int nend, int mend);
+    bool operator==(Matrix &other);
+    bool operator!=(Matrix &other);
+    Iterator begin();
+    Iterator end();
+    friend istream &operator>>(istream &in, Matrix &matrix);
+    friend ostream &operator<<(ostream &out, const Matrix &matrix);
+    friend class Iterator;
+};
+void Matrix::push_back(int i, int j, double data)
+{
+    if (head == NULL)
+        head = new Node(i, j, data);
+    else
+    {
+        Node *current = head;
+        while (current->pNext != NULL)
+            current = current->pNext;
+        current->pNext = new Node(i, j, data);
+    }
+}
+void Matrix::clear()
+{
+    n = 0;
+    m = 0;
+    while (head != NULL)
+    {
+        Node *temp = head;
+        head = head->pNext;
+        delete temp;
+    }
+}
+class Iterator
+{
+    Matrix::Node *ptr;
+
+  public:
+    double &operator*()
+    {
+        return ptr->data;
+    }
+    bool operator==(const Iterator &it)
+    {
+        return (ptr == it.ptr);
+    }
+    bool operator!=(const Iterator &it)
+    {
+        return (ptr != it.ptr);
+    }
+    Iterator &operator++()
+    {
+        ptr = ptr->pNext;
+        return *this;
+    }
+    Iterator operator++(int)
+    {
+        Iterator old = *this;
+        ptr = ptr->pNext;
+        return old;
+    }
+    friend class Matrix;
+};
+Iterator Matrix::begin()
+{
+    Iterator it;
+    it.ptr = head;
+    return it;
+}
+Iterator Matrix::end()
+{
+    Iterator it;
+    it.ptr = NULL;
+    return it;
+}
+Matrix::Matrix()
+{
+    n = 0;
+    m = 0;
+    head = NULL;
+}
+Matrix::Matrix(const Matrix &other)
+{
+    head = NULL;
+    *this = other;
+}
+Matrix::~Matrix()
+{
+    clear();
+}
+Matrix &Matrix::operator=(const Matrix &other)
+{
+    if (this->head != NULL)
+    {
+        clear();
+    }
+    Node *current = other.head;
+    this->n = other.n;
+    this->m = other.m;
+    while (current != NULL)
+    {
+        push_back(current->i, current->j, current->data);
+        current = current->pNext;
+    }
+    return *this;
+}
+Matrix Matrix::operator+(Matrix &other)
+{
+    Matrix temp;
+    if (this->n == other.n && this->m == other.m)
+    {
+        temp = *this;
+        for (int i = 0; i < this->n; i++)
+            for (int j = 0; j < this->m; j++)
+                temp(i, j) = (*this)(i, j) + other(i, j);
+    }
+    return temp;
+}
+Matrix Matrix::operator-(Matrix &other)
+{
+    Matrix temp;
+    if (this->n == other.n && this->m == other.m)
+    {
+        temp = *this;
+        for (int i = 0; i < this->n; i++)
+            for (int j = 0; j < this->m; j++)
+                temp(i, j) = (*this)(i, j) - other(i, j);
+    }
+    return temp;
+}
+Matrix Matrix::operator*(Matrix &other)
+{
+    Matrix temp;
+    double data = 0;
+    if (this->m == other.n)
+    {
+        temp.n = this->n;
+        temp.m = other.m;
+        for (int i = 0; i < temp.n; i++)
+        {
+            for (int j = 0; j < temp.m; j++)
+            {
+                for (int k = 0; k < this->m; k++)
+                {
+                    data += (*this)(i, k) * other(k, j);
+                }
+                temp.push_back(i + 1, j + 1, data);
+                data = 0;
+            }
+        }
+    }
+    return temp;
+}
+Matrix Matrix::inversion()
+{
+    Matrix E;
+    E.n = this->n;
+    E.m = this->m;
+    Matrix copy = *this;
+    double temp;
+    if (this->n == this->m)
+    {
+        int N = this->n;
+        for (int i = 1; i <= N; i++)
+        {
+            for (int j = 1; j <= N; j++)
+            {
+                if (i == j)
+                    E.push_back(i, j, 1);
+                else
+                    E.push_back(i, j, 0);
+            }
+        }
+        for (int k = 0; k < N; k++)
+        {
+            temp = copy(k, k);
+            for (int j = 0; j < N; j++)
+            {
+                copy(k, j) /= temp;
+                E(k, j) /= temp;
+            }
+            for (int i = k + 1; i < N; i++)
+            {
+                temp = copy(i, k);
+
+                for (int j = 0; j < N; j++)
+                {
+                    copy(i, j) -= copy(k, j) * temp;
+                    E(i, j) -= E(k, j) * temp;
+                }
+            }
+        }
+        for (int k = N - 1; k > 0; k--)
+        {
+            for (int i = k - 1; i >= 0; i--)
+            {
+                temp = copy(i, k);
+
+                for (int j = 0; j < N; j++)
+                {
+                    copy(i, j) -= copy(k, j) * temp;
+                    E(i, j) -= E(k, j) * temp;
+                }
+            }
+        }
+        return E;
+    }
+}
+Matrix Matrix::submatrix(int nbegin, int mbegin, int nend, int mend)
+{
+    Matrix temp;
+    Node *current = this->head;
+    temp.n = nend - nbegin + 1;
+    temp.m = mend - mbegin + 1;
+    while (current->i != nbegin)
+        current = current->pNext;
+    for (int i = 1; i <= temp.n; i++)
+    {
+        while (current->j != mbegin)
+            current = current->pNext;
+        for (int j = 1; j <= temp.m; j++)
+        {
+            temp.push_back(i, j, current->data);
+            current = current->pNext;
+        }
+    }
+    return temp;
+}
+Matrix Matrix::transposition()
+{
+    Matrix temp;
+    temp.n = this->m;
+    temp.m = this->n;
+    for (int i = 1; i <= temp.n; i++)
+    {
+        for (int j = 1; j <= temp.m; j++)
+        {
+            temp.push_back(i, j, (*this)(j - 1, i - 1));
+        }
+    }
+    return temp;
+}
+double &Matrix::operator()(int i, int j)
+{
+    Node *current = head;
+    while (current != NULL)
+    {
+        if (current->i == i + 1 && current->j == j + 1)
+            return current->data;
+        current = current->pNext;
+    }
+}
+bool Matrix::operator==(Matrix &other)
+{
+    if (this->n == other.n && this->m == other.m)
+    {
+        for (int i = 0; i < this->n; i++)
+            for (int j = 0; j < this->m; j++)
+                if ((*this)(i, j) != other(i, j))
+                    return false;
+        return true;
+    }
+    else
+        return false;
+}
+bool Matrix::operator!=(Matrix &other)
+{
+    if (this->n == other.n && this->m == other.m)
+    {
+        for (int i = 0; i < this->n; i++)
+            for (int j = 0; j < this->m; j++)
+                if ((*this)(i, j) != other(i, j))
+                    return true;
+        return false;
+    }
+    else
+        return true;
+}
+istream &operator>>(istream &in, Matrix &matrix)
+{
+    char check;
+    int i = 0;
+    int j = 0;
+    double data;
+    while (true)
+    {
+        check = in.peek();
+        if (check == '[')
+        {
+            in.ignore();
+            continue;
+        }
+        if (check == '(')
+        {
+            in.ignore();
+            i++;
+            j++;
+            continue;
+        }
+        if (check == ')')
+        {
+            in.ignore();
+            matrix.n = i;
+            j = 0;
+            continue;
+        }
+        if (check == ']')
+        {
+            in.ignore();
+            break;
+        }
+        in >> data;
+        matrix.push_back(i, j, data);
+        matrix.m = j;
+        j++;
+    }
+    return in;
+}
+ostream &operator<<(ostream &out, const Matrix &matrix)
+{
+    Matrix copy(matrix);
+    out << '[';
+    for (int i = 0; i < copy.n; i++)
+    {
+        out << '(';
+        for (int j = 0; j < copy.m; j++)
+        {
+            out << copy(i, j);
+            if (j < copy.m - 1)
+                out << ' ';
+        }
+        out << ')';
+    }
+    out << ']';
+    return out;
+}
+int main()
+{}
